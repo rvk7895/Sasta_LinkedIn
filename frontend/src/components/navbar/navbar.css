@@ -1,0 +1,7 @@
+.navLinks{
+    color: lightslategray
+}
+
+.navLinks:hover {
+    color: darkslategray
+}
