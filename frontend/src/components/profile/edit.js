@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Container, Row, Col, Image, Form, InputGroup, FormControl, Button, DropdownButton, Dropdown } from 'react-bootstrap'
 import { v4 as uid } from 'uuid'
+import FileBase64 from 'react-file-base64';
 
 const Recruiter = (props) => {
 
@@ -26,7 +27,7 @@ const Recruiter = (props) => {
                 </Row>
                 <Row>
                     <Col sm={12}>
-                            <Form.Control as="textarea" rows={3} value={user.bio} placeholder="Bio" onChange={e => setUser({ ...user, bio: e.target.value })} />
+                        <Form.Control as="textarea" rows={3} value={user.bio} placeholder="Bio" onChange={e => setUser({ ...user, bio: e.target.value })} />
                     </Col>
                 </Row>
             </Form.Group>
@@ -76,7 +77,7 @@ const Applicant = (props) => {
                     <Row className="justify-content-center text-center" style={{ fontSize: "2rem" }}>
                         Educational Institutes
                 </Row>
-                    {insti.map(ins => <div key={uid()}>
+                    {insti.map(ins => <div key={ins.id}>
                         <Row className="mb-3">
                             <Col sm={9}>
                                 <Form.Control type='text' value={ins.name} onChange={e => {
@@ -139,7 +140,7 @@ const Applicant = (props) => {
                         Skills
                     </Row>
                     {skills.map(skill =>
-                        <div key={uid()}>
+                        <div key={skill.id}>
                             <Row className="mb-3">
                                 <Col sm={9}>
                                     <Form.Control type='text' value={skill.name} onChange={e => {
@@ -161,21 +162,30 @@ const Applicant = (props) => {
                         <Row className="justify-content-center mb-3">
                             <Button variant="outline-success" onClick={() => { setUser({ ...user, skills }) }}>Save</Button>
                         </Row>}
-                        <Row className="justify-content-center mb-3">
-                            <DropdownButton title="Choose">
-                                <Dropdown.Item onClick={() => setSkills([...skills, {id:uid(), name:"Python"}])}>Python</Dropdown.Item>
-                                <Dropdown.Item onClick={() => setSkills([...skills, {id:uid(), name:"Java"}])}>Java</Dropdown.Item>
-                                <Dropdown.Item onClick={() => setSkills([...skills, {id:uid(), name:"C++"}])}>C++</Dropdown.Item>
-                                <Dropdown.Item onClick={() => setSkills([...skills, {id:uid(), name:"C#"}])}>C#</Dropdown.Item>
-                                <Dropdown.Item onClick={() => setSkills([...skills, {id:uid(), name:"Go"}])}>Go</Dropdown.Item>
-                                <Dropdown.Item onClick={() => setSkills([...skills, {id:uid(), name:"Julia"}])}>Julia</Dropdown.Item>
-                            </DropdownButton>
-                        </Row>
+                    <Row className="justify-content-center mb-3">
+                        <DropdownButton title="Choose">
+                            <Dropdown.Item onClick={() => setSkills([...skills, { id: uid(), name: "Python" }])}>Python</Dropdown.Item>
+                            <Dropdown.Item onClick={() => setSkills([...skills, { id: uid(), name: "Java" }])}>Java</Dropdown.Item>
+                            <Dropdown.Item onClick={() => setSkills([...skills, { id: uid(), name: "C++" }])}>C++</Dropdown.Item>
+                            <Dropdown.Item onClick={() => setSkills([...skills, { id: uid(), name: "C#" }])}>C#</Dropdown.Item>
+                            <Dropdown.Item onClick={() => setSkills([...skills, { id: uid(), name: "Go" }])}>Go</Dropdown.Item>
+                            <Dropdown.Item onClick={() => setSkills([...skills, { id: uid(), name: "Julia" }])}>Julia</Dropdown.Item>
+                        </DropdownButton>
+                    </Row>
                     <Row className="justify-content-center mb-3" >
                         <Button onClick={() => setSkills([...skills, { id: uid(), name: "" }])} variant='outline-info' >Insert Skill</Button>
                     </Row>
                 </Col>
             </Row>
+            <Row className="justify-content-center">
+                <Col className="text-right" sm={6} style={{ fontSize: "2rem" }}>
+                    Upload CV :
+                    </Col>
+                <Col className="justify-content-start my-auto">
+                    <FileBase64 onDone={e => setUser({ ...user, CV: e.base64 })} className="btn btn-secondary" />
+                </Col>
+            </Row>
+            <div style={{ margin: "40px" }} />
         </div>
     )
 }
@@ -192,9 +202,17 @@ const Edit = (props) => {
             <div style={{ margin: "20px" }} />
             <Container>
                 <Row className="justify-content-center">
-                    <Image src={process.env.PUBLIC_URL + '/images/avatar.png'} roundedCircle style={{ height: '300px', width: '300px', borderStyle: "solid", borderWidth: "5px" }} />
+                    <Image src={user.profile_picture} roundedCircle style={{ height: '300px', width: '300px', borderStyle: "solid", borderWidth: "5px" }} />
                 </Row>
                 <div style={{ margin: "40px" }} />
+                <Row className="justify-content-center">
+                    <Col sm={6} className="text-right">
+                        Change Profile Picture
+                    </Col>
+                    <Col>
+                        <FileBase64 onDone={e => setUser({ ...user, profile_picture: e.base64 })} className="btn btn-secondary" />
+                    </Col>
+                </Row>
                 <Form.Group controlId='formName' className="justify-content-center mb-3">
                     <Row>
                         <Form.Label column sm={12} style={{ fontSize: '20px' }}>Name</Form.Label>

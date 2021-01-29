@@ -47,7 +47,7 @@ const App = (props) => {
     }, [job])
 
     return (
-        <div>
+        <div className="mb-3">
             <Card>
                 {!loaded ? <Row className="justify-content-center text-center"><Loader /></Row> : <div>
                     <Row style={{ margin: "0.1rem" }}>

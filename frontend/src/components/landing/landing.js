@@ -10,7 +10,7 @@ const landing = () => {
     return (
         <div>
             <Jumbotron>
-                <h1>
+                <h1 className="display-3">
                     Sasta LinkedIn
                 </h1>
             </Jumbotron>

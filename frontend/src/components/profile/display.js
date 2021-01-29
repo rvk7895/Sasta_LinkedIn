@@ -1,7 +1,8 @@
-import React, { useEffect, useContext } from 'react'
-import { Container, Row, Image, Col, Card, Badge } from 'react-bootstrap'
+import React, { useEffect, useContext, useState } from 'react'
+import { Container, Row, Image, Col, Card, Badge, Button } from 'react-bootstrap'
 import { UserContext } from '../userContext/userContext'
-import {v4 as uid} from 'uuid'
+import { v4 as uid } from 'uuid';
+import Base64Downloader from 'react-base64-downloader';
 
 const Recruiter = (props) => {
     const user = props.user;
@@ -25,13 +26,21 @@ const Recruiter = (props) => {
 
 const Applicant = (props) => {
     const { user } = props;
+    const [rating, setRating] = useState(0);
 
     useEffect(() => {
-        // console.log(user)
-    }, [user])
+        console.log(user);
+        let netRating = user.rating.length === 0 ? 0 : user.rating.length === 1 ? user.rating[0].rating : user.rating.reduce((a, b) => a.rating + b.rating) / user.rating.length;
+        console.log(netRating);
+        setRating(netRating);
+    }, [])
 
     return (
         <div>
+            <Row className="justify-content-center mb-3" style={{ fontSize: "2rem" }}>
+                <Col sm={6} className="text-right"> Rating :</Col>
+                <Col sm={6} >{rating}</Col>
+            </Row>
             <Row>
                 <Col sm={12} lg={6}>
                     <Row className="justify-content-center text-center" style={{ fontSize: "2rem" }}>
@@ -80,6 +89,10 @@ const Applicant = (props) => {
                         )}
                 </Col>
             </Row>
+            <Row className='justify-content-center'>
+                <Button download={`${user.name}_CV.pdf`} href={user.CV}> Download CV </Button>
+            </Row>
+            <div style={{ margin: "40px" }} />
         </div>
     )
 }
@@ -108,7 +121,7 @@ const Display = (props) => {
             <div style={{ margin: "20px" }} />
             <Container>
                 <Row className="justify-content-center">
-                    <Image src={process.env.PUBLIC_URL + '/images/avatar.png'} roundedCircle style={{ height: '300px', width: '300px', borderStyle: "solid", borderWidth: "5px" }} />
+                    <Image src={user.profile_picture} roundedCircle style={{ height: '300px', width: '300px', borderStyle: "solid", borderWidth: "5px" }} />
                 </Row>
                 <div style={{ margin: "40px" }} />
                 {/* <Row className="justify-content-center mb-3">

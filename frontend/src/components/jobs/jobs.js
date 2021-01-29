@@ -8,7 +8,7 @@ import Fuse from 'fuse.js'
 
 const Job = (props) => {
 
-    const { job, app_id, setAlert } = props;
+    const { job, app_id, setAlert, noOfApplications, handleApply } = props;
     const [recruiter, setRecruiter] = useState({});
     const [loaded, setLoaded] = useState(false);
     const [modal, setModal] = useState(false);
@@ -37,9 +37,9 @@ const Job = (props) => {
                 rec_id: job.recruiter_id
             });
             console.log(res.data)
+            handleApply(job._id);
             setModal(false);
-            setAlert(true)
-
+            setAlert(true);
         }
         catch (err) {
             console.log(err);
@@ -67,23 +67,34 @@ const Job = (props) => {
                             </Col>
                         </Row>
                         <Row style={{ margin: "0.1rem" }}>
+                            <Col lg={12} sm={12}>
+                                <span style={{ fontWeight: "bold" }}>Posting Date:</span>{` ${job.post_date.getDate()}-${job.post_date.getMonth() + 1}-${job.post_date.getFullYear()}`}
+                            </Col>
+                        </Row>
+                        <Row style={{ margin: "0.1rem" }}>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Salary:</span>{` ${job.salary}`}</Col>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Type:</span>{` ${job.type}`}</Col>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Duration:</span>{job.duration === 0 ? " Indefinite" : ` ${job.duration} Months`}</Col>
-                            <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Deadline:</span>{` ${` ${job.deadline.getDate()}`}-${job.deadline.getMonth()+1}-${job.deadline.getFullYear()}`}</Col>
+                            <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Deadline:</span>{` ${` ${job.deadline.getDate()}`}-${job.deadline.getMonth() + 1}-${job.deadline.getFullYear()}`}</Col>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Positions Left:</span>{` ${job.pos_left}`}</Col>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Applications Left:</span>{` ${job.app_left}`}</Col>
                         </Row>
                         <Row style={{ margin: "0.1rem" }}>
                             <Col lg={6} sm={12} xs={12}>
-                                <span style={{ fontWeight: "bold" }}>Required Skills:</span>{job.req_skills.map(skill => <Badge key={uid()} pill variant="info" style={{ margin: "0.1rem" }}>{skill}</Badge>)}
+                                <span style={{ fontWeight: "bold" }}>Required Skills:</span>{job.req_skills.map(skill => <Badge key={uid()} pill variant="info" style={{ margin: "0.1rem" }}>{skill.name}</Badge>)}
                             </Col>
                             <Col lg={4} sm={12} xs={12}>
-                                <span style={{ fontWeight: "bold" }}>Rating: </span>TODO
-                             </Col>
-                            <Col lg={2} sm={12} xs={12}>
-                                <Button variant="success" onClick={() => setModal(true)} disabled={!job.pos_left || !job.app_left ? true : false} block>Apply</Button>
+                                <span style={{ fontWeight: "bold" }}>Rating: </span>{job.displayRating}
                             </Col>
+                            <Col lg={2} sm={12} xs={12}>
+                                {job.applied ?
+                                    <Button variant="secondary" disabled block>Applied</Button>:
+                                    !job.pos_left || !job.app_left ?
+                                    <Button variant="info" disabled block>Full</Button>:
+                                    <Button variant="success" onClick={() => setModal(true)} disabled={!noOfApplications >= 10 ? true : false} block>Apply</Button>
+                                }
+                            </Col>
+                            <div style={{ margin: "5px" }} />
                         </Row>
                         <Modal centered size="lg" show={modal} onHide={() => setModal(false)}>
                             <Modal.Header closeButton>
@@ -119,22 +130,36 @@ const Jobs = (props) => {
     })
     const [minSalary, setMinSalary] = useState('');
     const [maxSalary, setMaxSalary] = useState('');
-    
+    const [noOfApplications, setNoOfApplications] = useState(0);
+
+    const handleApply = (id) => {
+        let appliedJobs = jobs;
+        appliedJobs = appliedJobs.map(job => job._id === id ? { ...job, applied: true } : job);
+        setJobs(appliedJobs);
+    }
+
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const res = await axios.get('/api/jobs/all');
-                res.data = res.data.map(data => { const deadline = new Date(data.deadline); return { ...data, deadline } })
+                res.data = res.data.map(data => { const deadline = new Date(data.deadline); const post_date = new Date (data.post_date); return { ...data, deadline, post_date } })
                 const res2 = await axios.get(`/api/applications/app/${props.match.params.id}`)
-                console.log(res2)
                 let jobsNotApplied = [];
+                setNoOfApplications(res2.data.length);
                 for (let i = 0; i < res.data.length; i++) {
                     let applied = false;
                     for (let j = 0; j < res2.data.length; j++) {
                         if (res2.data[j].job_id === res.data[i]._id) applied = true;
                     }
-                    if (!applied) jobsNotApplied.push(res.data[i]);
+                    jobsNotApplied.push({ ...res.data[i], applied });
                 }
+                let today = new Date();
+                jobsNotApplied = jobsNotApplied.filter(job => { let deadline = new Date(job.deadline); if (today.getTime() < deadline.getTime()) return job; });
+                jobsNotApplied = jobsNotApplied.map(job => {
+                    let displayRating = job.rating.length === 0 ? 0 : job.rating.length === 1 ? job.rating[0].rating : job.rating.reduce((a, b) => a.rating + b.rating) / job.rating.length;
+                    return { ...job, displayRating };
+                })
+                console.log(jobsNotApplied);
                 setJobs(jobsNotApplied);
                 setVisibleJobs(jobsNotApplied);
                 if (jobs) setLoaded(true);
@@ -172,8 +197,8 @@ const Jobs = (props) => {
         if (filters.order === "Salary Descending") filtered.sort((a, b) => -(a.salary - b.salary))
         if (filters.order === "Duration Ascending") filtered.sort((a, b) => a.duration - b.duration)
         if (filters.order === "Duration Descending") filtered.sort((a, b) => -(a.duration - b.duration))
-        if (filters.order === "Rating Ascending") filtered.sort((a, b) => a.rating - b.rating)
-        if (filters.order === "Rating Descending") filtered.sort((a, b) => -(a.rating - b.rating))
+        if (filters.order === "Rating Ascending") filtered.sort((a, b) => a.displayRating - b.displayRating)
+        if (filters.order === "Rating Descending") filtered.sort((a, b) => -(a.displayRating - b.displayRating))
         setVisibleJobs([...filtered]);
         if (visibleJobs) setLoaded(true);
     }, [filters, filters.order, jobs]);
@@ -184,9 +209,10 @@ const Jobs = (props) => {
                 <CustomNav />
             </Container>
             <Jumbotron>
-                <h1>Job Listings</h1>
+                <h1 className="display-3">Job Listings</h1>
             </Jumbotron>
             <Container fluid style={{ maxWidth: "1250px" }}>
+                {noOfApplications >= 10 && <Alert variant="danger">Already applied to 10 jobs</Alert>}
                 <Row className="justify-content-center mb-3">
                     <Col>
                         <FormControl type="text" value={filters.search} onChange={e => setFilters({ ...filters, search: e.target.value })} placeholder="Search" />
@@ -238,7 +264,7 @@ const Jobs = (props) => {
                     <Col>
                         <Button variant="outline-warning" onClick={() => {
                             setFilters({
-                                search:'',
+                                search: '',
                                 typeOfJob: '',
                                 maxSalary: '',
                                 minSalary: '',
@@ -251,11 +277,11 @@ const Jobs = (props) => {
                 <Alert dismissible variant="success" show={alert} onClose={() => setAlert(false)}>Applied!</Alert>
                 {!loaded ? <Row className="justify-content-center"><Loader /></Row> : (
                     <div>
-                        {visibleJobs.map(job => <Job job={job} key={job._id} app_id={props.match.params.id} setAlert={setAlert} />)}
+                        {visibleJobs.map((job, idx) => <Job job={job} key={job._id} app_id={props.match.params.id} setAlert={setAlert} noOfApplications={noOfApplications} handleApply={handleApply} />)}
                     </div>
                 )}
             </Container>
-        </div>
+        </div >
     )
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import { Link} from 'react-router-dom'
 import { Container, Form, Jumbotron, Col, Row, Button, Alert } from 'react-bootstrap';
 import { UserContext } from '../userContext/userContext'
 import axios from 'axios';
@@ -32,10 +32,6 @@ const SignUp = () => {
             }
             if (res.data.status === 200) {
                 setAlert(false);
-                setId(res.data.user._id);
-                setRole(res.data.user.role);
-                localStorage.setItem('LinkedInid',res.data.user._id);
-                localStorage.setItem('LinkedInRole',res.data.user.role);
                 setRegistered(true);
             }
             console.log(res);
@@ -48,7 +44,7 @@ const SignUp = () => {
     return (
         <div>
             <Jumbotron>
-                <h1>
+                <h1 className="display-3">
                     Sign Up
                 </h1>
             </Jumbotron>
@@ -60,10 +56,9 @@ const SignUp = () => {
                 }
 
                 {registered &&
-                    // <Alert variant='success' onClose={() => setRegistered(false)} dismissible>
-                    //     You have been registered, head to the Sign In page to sign in!
-                    //     </Alert>
-                    <Redirect exact to={`/profile/${id}`}/>
+                    <Alert variant='success' onClose={() => setRegistered(false)} dismissible>
+                        You have been registered, head to the Sign In page to sign in!
+                        </Alert>
                 }
                 <form onSubmit={handleSubmit}>
                     <Form.Group controlId='formName' className="justify-content-center mb-3">

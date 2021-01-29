@@ -20,6 +20,12 @@ const ApplicationSchema = mongoose.Schema({
     status:{
         type:String,
         default:'pending'
+    },
+    dateOfJoining:{
+        type:String
+    },
+    applyingDate:{
+        type:String
     }
 });
 

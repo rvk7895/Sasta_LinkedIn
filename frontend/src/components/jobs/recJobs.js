@@ -6,6 +6,7 @@ import Loader from '../loader/loader';
 import { v4 as uid } from 'uuid';
 import Fuse from 'fuse.js'
 import CreateEditJob from './createEditJob'
+import { Link } from 'react-router-dom'
 
 const Job = (props) => {
 
@@ -13,6 +14,7 @@ const Job = (props) => {
     const [loaded, setLoaded] = useState(true);
     const [modal, setModal] = useState(false);
     const [SOP, setSOP] = useState('');
+    const [rating, setRating] = useState(0.0);
 
     const handleDelete = async () => {
         try {
@@ -26,6 +28,10 @@ const Job = (props) => {
             console.log(err)
         }
     }
+
+    useEffect(() => {
+        setLoaded(true);
+    }, [job, modal])
 
     return (
         <div>
@@ -41,7 +47,7 @@ const Job = (props) => {
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Salary:</span>{` ${job.salary}`}</Col>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Type:</span>{` ${job.type}`}</Col>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Duration:</span>{job.duration === 0 ? " Indefinite" : ` ${job.duration} Months`}</Col>
-                            <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Deadline:</span>{` ${` ${job.deadline.getDate()}`}-${job.deadline.getMonth()+1}-${job.deadline.getFullYear()}`}</Col>
+                            <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Deadline:</span>{` ${` ${job.deadline.getDate()}`}-${job.deadline.getMonth() + 1}-${job.deadline.getFullYear()}`}</Col>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Positions Left:</span>{` ${job.pos_left}`}</Col>
                             <Col lg={2} sm={6} xs={6}><span style={{ fontWeight: "bold" }}>Applications Left:</span>{` ${job.app_left}`}</Col>
                         </Row>
@@ -49,20 +55,28 @@ const Job = (props) => {
                             <Col lg={6} sm={12} xs={12}>
                                 <span style={{ fontWeight: "bold" }}>Required Skills:</span>{job.req_skills.map(skill => <Badge key={uid()} pill variant="info" style={{ margin: "0.1rem" }}>{skill.name}</Badge>)}
                             </Col>
-                            <Col lg={4} sm={12} xs={12}>
-                                <span style={{ fontWeight: "bold" }}>Rating: </span>TODO
-                             </Col>
-                            <Col lg={1} sm={12} xs={12}>
-                                <Button variant="warning" block onClick={() => setModal(true)}>Edit</Button>
+                            <Col lg={2} sm={12} xs={12}>
+                                <span style={{ fontWeight: "bold" }}>Rating: </span>{job.displayRating}
                             </Col>
-                            <Col lg={1} sm={12} xs={12}>
+                            <Col lg={2} sm={12} xs={12} className="text-center mb-3">
+                                <Link to={`/applications/${job._id}`}>
+                                    <Button>
+                                        View Applications
+                                    </Button>
+                                </Link>
+
+                            </Col>
+                            <Col lg={1} sm={12} xs={12} className="text-center mb-3">
+                                <Button variant="warning" onClick={() => setModal(true)}>Edit</Button>
+                            </Col>
+                            <Col lg={1} sm={12} xs={12} className="text-center mb-3">
                                 <Button variant="danger" onClick={handleDelete}>Delete</Button>
                             </Col>
                         </Row>
                         <CreateEditJob show={modal} setModal={setModal} setJobs={setJobs} recruiter_id={job.recruiter_id} jobs={jobs} job={job} setLoaded={setLoaded} func={'edit'} />
                     </div>)}
             </Card>
-        </div>
+        </div >
     )
 }
 
@@ -90,6 +104,10 @@ const RecJobs = (props) => {
                 const res = await axios.get(`/api/jobs/rec/${props.match.params.id}`);
                 res.data = res.data.map(data => { const deadline = new Date(data.deadline); return { ...data, deadline } })
                 console.log(res.data)
+                res.data = res.data.map(job => {
+                    let displayRating = job.rating.length === 0 ? 0 : job.rating.length === 1 ? job.rating[0].rating : job.rating.reduce((a, b) => a.rating + b.rating) / job.rating.length;
+                    return { ...job, displayRating };
+                })
                 setJobs([...res.data]);
                 setVisibleJobs([...res.data]);
                 if (jobs) setLoaded(true);
@@ -101,6 +119,9 @@ const RecJobs = (props) => {
         fetchData();
     }, [])
 
+    useEffect(() => {
+        setLoaded(true)
+    }, [visibleJobs])
 
     useEffect(() => {
         let filtered = jobs;
@@ -127,8 +148,8 @@ const RecJobs = (props) => {
         if (filters.order === "Salary Descending") filtered.sort((a, b) => -(a.salary - b.salary))
         if (filters.order === "Duration Ascending") filtered.sort((a, b) => a.duration - b.duration)
         if (filters.order === "Duration Descending") filtered.sort((a, b) => -(a.duration - b.duration))
-        if (filters.order === "Rating Ascending") filtered.sort((a, b) => a.rating - b.rating)
-        if (filters.order === "Rating Descending") filtered.sort((a, b) => -(a.rating - b.rating))
+        if (filters.order === "Rating Ascending") filtered.sort((a, b) => a.displayRating - b.displayRating)
+        if (filters.order === "Rating Descending") filtered.sort((a, b) => -(a.displayRating - b.displayRating))
         setVisibleJobs(filtered);
         if (visibleJobs) setLoaded(true);
     }, [filters, filters.order, jobs]);
@@ -212,7 +233,7 @@ const RecJobs = (props) => {
                         {visibleJobs.map((job, idx) => <Job job={job} key={idx} setAlert={setAlert} setJobs={setJobs} jobs={jobs} />)}
                     </div>
                 )}
-                <CreateEditJob show={modal} setModal={setModal} recruiter_id={props.match.params.id} setJobs={setJobs} jobs={jobs} setLoaded={setLoaded} func={'insert'} job={{}} />
+                <CreateEditJob show={modal} setModal={setModal} recruiter_id={props.match.params.id} setJobs={setJobs} jobs={jobs} setLoaded={setLoaded} func={'insert'} setVisibleJobs={setVisibleJobs} visibleJobs={visibleJobs} />
             </Container>
         </div>
     )

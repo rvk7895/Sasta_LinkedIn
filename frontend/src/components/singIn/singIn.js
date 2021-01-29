@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react'
+import React, { useState, useContext, useEffect } from 'react'
 import { Redirect } from 'react-router-dom'
 import { Alert, Container, Jumbotron, Form, Row, Col, Button } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
@@ -27,12 +27,14 @@ const SingIn = () => {
             }
             if (res.data.status === 200) {
                 const user = jwt_decode(res.data.token);
+                console.log(user);
+                localStorage.setItem('LinkedInid', user.id);
+                localStorage.setItem('LinkedInRole', user.role);
                 userContext.setId(user.id);
-                userContext.setRole(user.role);
-                console.log(user)
-                localStorage.setItem('LinkedInid',user.id);
-                localStorage.setItem('LinkedInRole',user.role);
-                setRedirect(true);
+                userContext.setRole(localStorage.getItem('LinkedInRole'));
+                console.log(userContext.id);
+                console.log(userContext.role);
+                if (userContext.id && userContext.role) setRedirect(true);
             }
         }
         catch (err) {
@@ -40,10 +42,16 @@ const SingIn = () => {
         }
     }
 
+    useEffect(()=>{
+       if(!userContext.id) userContext.setId(localStorage.getItem('LinkedInid'));
+       if(!userContext.role) userContext.setRole(localStorage.getItem('LinkedInRole'));
+       if (userContext.id && userContext.role) setRedirect(true);
+    },[userContext.id, userContext.role])
+
     return (
         <div>
             <Jumbotron>
-                <h1>Sign In</h1>
+                <p className="display-3"> Sign In </p>
             </Jumbotron>
             <Alert>
 

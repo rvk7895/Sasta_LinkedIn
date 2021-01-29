@@ -10,9 +10,12 @@ const CustomNav = () => {
     const [redirect, setRedirect] = useState(false)
 
     const handleSignOut = () => {
-        userContext.setId('');
+        userContext.setId(null);
+        userContext.setRole(null);
+        localStorage.removeItem('LinkedInRole');
+        localStorage.removeItem('LinkedInid');
         setRedirect(true);
-    }
+    };
 
     return (
         <Navbar className="justify-content-between" >
@@ -22,19 +25,31 @@ const CustomNav = () => {
             <Nav className="justify-content-end">
                 <Nav.Item>
                     <Nav.Link >
-                        <NavLink exact to={`/jobs/${userContext.id}`} style={{ textDecoration: 'none'}} className="navLinks">
+                        <NavLink exact to={`/jobs/${userContext.id}`} style={{ textDecoration: 'none' }} className="navLinks">
                             Jobs
                         </NavLink>
                     </Nav.Link>
                 </Nav.Item>
-                <Nav.Item>
+                {userContext.role === 'applicant' &&
+                    <Nav.Item>
+                        <Nav.Link >
+                            <NavLink exact to={`/applications/${userContext.id}`} style={{ textDecoration: 'none' }} className="navLinks">Applications</NavLink>
+                        </Nav.Link>
+                    </Nav.Item>
+                }
+                {userContext.role === "recruiter" && (<Nav.Item>
                     <Nav.Link >
-                        <NavLink exact to={`/applications/${userContext.id}`} style={{ textDecoration: 'none' }} className="navLinks">Applications</NavLink>
+                        <NavLink exact to={`/employees/${userContext.id}`} style={{ textDecoration: 'none' }} className="navLinks">My Employees</NavLink>
                     </Nav.Link>
-                </Nav.Item>
-                <Nav.Item style={{marginRight:"10px"}}>
+                </Nav.Item>)}
+                {userContext.role === "applicant" && (<Nav.Item>
                     <Nav.Link >
-                        <NavLink exact to={`/profile/${userContext.id}`} style={{ textDecoration: 'none'}} className="navLinks">Profile</NavLink>
+                        <NavLink exact to={`/myJobs/${userContext.id}`} style={{ textDecoration: 'none' }} className="navLinks">My Jobs</NavLink>
+                    </Nav.Link>
+                </Nav.Item>)}
+                <Nav.Item style={{ marginRight: "10px" }}>
+                    <Nav.Link >
+                        <NavLink exact to={`/profile/${userContext.id}`} style={{ textDecoration: 'none' }} className="navLinks">Profile</NavLink>
                     </Nav.Link>
                 </Nav.Item>
                 <Nav.Item>

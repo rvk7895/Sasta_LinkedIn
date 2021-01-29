@@ -13,7 +13,9 @@ const CreateEditJob = (props) => {
         jobs,
         setLoaded,
         func,
-        job
+        job,
+        setVisibleJobs,
+        visibleJobs
     } = props;
 
     const [title, setTitle] = useState('');
@@ -39,12 +41,17 @@ const CreateEditJob = (props) => {
         }
     }, [])
 
+    useEffect(() => {
+        setModal(false);
+        setLoaded(true);
+    }, [visibleJobs])
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoaded(false);
         if (func === 'insert') {
             try {
-                const res = await axios.post('/api/jobs/create', {
+                let res = await axios.post('/api/jobs/create', {
                     title,
                     max_app: maxApp,
                     max_pos: maxPos,
@@ -56,19 +63,19 @@ const CreateEditJob = (props) => {
                     recruiter_id
                 });
                 let newDeadline = new Date(deadline)
+                let pos_left = maxPos
+                let app_left = maxApp
                 console.log(res);
-                setJobs(jobs.push({
-                    title,
-                    max_app: maxApp,
-                    max_pos: maxPos,
-                    salary,
-                    type,
-                    deadline: newDeadline,
-                    duration,
-                    req_skills: skills,
-                    recruiter_id
-                }));
-                if (jobs) setLoaded(true)
+                res.data.deadline = new Date(res.data.deadline); 
+                let x = [...jobs,res.data];
+                await setJobs(x);
+                console.log(visibleJobs);
+                await setVisibleJobs(x);
+                console.log(visibleJobs)
+                // window.location.reload();
+                // setVisibleJobs(vJobs);
+                setModal(false)
+                setLoaded(true);
             }
             catch (err) {
                 console.log(err)
@@ -78,6 +85,7 @@ const CreateEditJob = (props) => {
         if (func === 'edit') {
             try {
                 const res = await axios.post('/api/jobs/edit', {
+                    _id: job._id,
                     title,
                     max_app: maxApp,
                     max_pos: maxPos,
@@ -89,12 +97,49 @@ const CreateEditJob = (props) => {
                     recruiter_id
                 })
                 console.log(res);
+                let newDeadline = new Date(deadline)
+                let pos_left = job.pos_left + (maxPos - job.max_pos);
+                pos_left = pos_left < 0 ? 0 : pos_left;
+                let app_left = job.app_left + (maxApp - job.max_app);
+                app_left = app_left < 0 ? 0 : app_left;
+
+                setJobs(jobs.map(currJob => currJob._id === job._id ? {
+                    _id: job._id,
+                    title,
+                    max_app: maxApp,
+                    max_pos: maxPos,
+                    salary,
+                    type,
+                    deadline: newDeadline,
+                    duration,
+                    req_skills: skills,
+                    recruiter_id,
+                    pos_left,
+                    app_left
+                } : currJob));
+
+                setVisibleJobs(visibleJobs.map(currJob => currJob._id === job._id ? {
+                    _id: job._id,
+                    title,
+                    max_app: maxApp,
+                    max_pos: maxPos,
+                    salary,
+                    type,
+                    deadline: newDeadline,
+                    duration,
+                    req_skills: skills,
+                    recruiter_id,
+                    pos_left,
+                    app_left
+                } : currJob));
             }
             catch (err) {
                 console.log(err)
             }
         }
     }
+
+
 
     const skillCheck = () => {
         if (skills.length !== savedSkills.length) return true
@@ -260,7 +305,7 @@ const CreateEditJob = (props) => {
                             <Button onClick={() => setSkills([...skills, { id: uid(), name: "" }])} variant='outline-info' >Insert Skill</Button>
                         </Row>
                     </Form.Group>
-                    <Button type='submit' variant="success" block>Create Job</Button>
+                    <Button type='submit' variant="success" block>{func === 'insert' ? "Create Job" : "Edit Job"}</Button>
                 </form>
             </Modal.Body>
         </Modal>

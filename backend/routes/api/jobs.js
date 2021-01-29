@@ -12,17 +12,17 @@ router.get('/all', (req, res) => {
 
 router.get('/job/:jobId', (req, res) => {
     Jobs.findById(req.params.jobId, (err, job) => {
-        if(err) res.send({error: err, status:800});
-        res.status(200).send(job);
+        if (err) return res.send({ err: err, status: 200 });
+        return res.status(200).send(job);
     });
-});
+})
 
 router.post('/create', (req, res) => {
     req.body.deadline = new Date(req.body.deadline);
     req.body.post_date = new Date();
     req.body.app_left = req.body.max_app;
     req.body.pos_left = req.body.max_pos;
-    console.log(req.body);
+    req.body.rating = [];
     const newJob = new Jobs(req.body);
     newJob.save();
     res.status(200).send(newJob);
@@ -40,7 +40,7 @@ router.post('/delete', async (req, res) => {
         res.status(200).send({ message: "Deletion successful" });
     });
 
-    await Applications.updateMany({ job_id: req.body.id }, { status: 'deleted' });
+    await Applications.deleteMany({ job_id: req.body.id });
 });
 
 router.post('/rating', (req, res) => {
@@ -50,7 +50,6 @@ router.post('/rating', (req, res) => {
             console.log('here');
             if (job.rating[i].userId === req.body.userId) {
                 flag = false;
-                console.log('here');
                 job.rating[i].rating = req.body.rating;
                 await Jobs.findByIdAndUpdate(req.body._id, { rating: job.rating })
                 res.send({ message: "rating updated" });
@@ -67,6 +66,12 @@ router.post('/rating', (req, res) => {
 });
 
 router.post('/edit', async (req, res) => {
+    await Jobs.findById(req.body, (err, job) => {
+        req.body.pos_left = job.pos_left + (req.body.max_pos - job.max_pos);
+        req.body.pos_left = req.body.pos_left < 0 ? 0 : req.body.pos_left;
+        req.body.app_left = job.app_left + (req.body.max_app - job.max_app);
+        req.body.app_left = req.body.app_left < 0 ? 0 : req.body.app_left;
+    });
     console.log(req.body);
     await Jobs.findByIdAndUpdate(req.body._id, req.body);
     res.send({ message: "Job Updated" });
